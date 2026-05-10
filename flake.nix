@@ -35,6 +35,8 @@
             bat
             eza
             tree
+            zsh
+            starship
           ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
             vscode
           ];
