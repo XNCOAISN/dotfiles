@@ -26,7 +26,6 @@
         let
           personalPackages = with pkgs; [
             neovim
-            ripgrep
             fd
             fzf
             tmux
