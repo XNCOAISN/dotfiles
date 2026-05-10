@@ -1,23 +1,22 @@
 # dotfiles（Nix flake）
 
-Nix を使って、よく使うコマンドラインツールを **まとめて入れる**ための設定です（`neovim` や `git` など。このリポジトリの「入れる物のリスト」が Nix の flake になっています）。
+Nix の flake で、普段使う CLI ツール（`neovim` や `git` など）をまとめて提供します。
 
-## 共通の前提
+## 前提
 
-- パソコンに [Nix](https://nixos.org/download/) が入っていること
-- 下のコマンドをそのまま打てない場合は、先頭に  
-  `nix --extra-experimental-features 'nix-command flakes' `  
-  を付けて試してください（Nix の「実験的機能」を一度オンにするイメージです）。
+- [Nix](https://nixos.org/download/) が入っていること
+- この README の `nix …` は、環境によっては先頭に次を付けてください。  
+  `nix --extra-experimental-features 'nix-command flakes'`
 
 ---
 
-## 利用者向け（ツールを自分の環境に入れる）
+## 利用者向け
 
-**どこで**: 普段使っているターミナル（自分の Mac、Codespace のターミナルなど）。**このリポジトリを clone している必要はありません**（GitHub 上の flake を URL で指定します）。
+**どこで**: いつものターミナル（Mac / Codespace など）。**clone は不要**（`github:…` で取ります）。
 
 ### Install
 
-GitHub 上のこのリポジトリを指定して、**ツール一式をあなたのユーザー向けの環境に登録**します。登録が終わると、通常はターミナルからそのコマンドが使えるようになります。
+GitHub 上の flake を指定し、ツール一式を **ユーザーの Nix プロファイル**に登録します。
 
 ```bash
 nix profile add github:XNCOAISN/dotfiles
@@ -25,22 +24,22 @@ nix profile add github:XNCOAISN/dotfiles
 
 ### Upgrade
 
-**すでに登録したセットを、いまの GitHub 上の最新内容で入れ直す**操作です。
+登録済みの一式を、**GitHub のいまの default ブランチ**に合わせて入れ直します。
 
-`github:…` で入れた flake は、Nix が **GitHub の tarball をしばらくキャッシュ**します（設定 `tarball-ttl`、既定はだいたい 1 時間）。そのため **`nix profile upgrade` だけだと、push 直後にまだ古いコミットのまま**になることがあります。
-
-**push したあとすぐ反映したいときは `--refresh` を付けます**（キャッシュを古いとみなして取り直す指定です）。
+`github:…` は tarball をキャッシュします（`tarball-ttl`、多くの環境で既定は **約 1 時間**）。そのため **push 直後は `upgrade` だけだと古いコミットのまま**になることがあります。**すぐ反映したいときは `--refresh`** を付けます。
 
 ```bash
 nix profile list
 nix profile upgrade <Name> --refresh
 ```
 
-急がない場合は TTL が切れるまで待てば、**`--refresh` なしでも**新しい tarball を取りに行くことが多いです。いつもすぐ取り直したい場合は `nix.conf` の `tarball-ttl` を短くする方法もあります。
+`<Name>` は `nix profile list` の **`Name:`** の右の文字列に置き換えます。
+
+急がない場合は TTL 経過後に **`--refresh` なし**でも取り直されることが多いです。常にすぐ取り直したい場合は `nix.conf` の `tarball-ttl` を短くしてください。
 
 ### Uninstall
 
-**登録したセットをやめる**操作です。
+プロファイルから項目を外します。`<Name>` は上と同様です。
 
 ```bash
 nix profile list
@@ -51,31 +50,48 @@ nix profile remove <Name>
 
 ## 開発者向け
 
-**どこで**: **このリポジトリを clone したディレクトリ**（`flake.nix` がある場所）。`flake.nix` や `flake.lock` を編集し、**GitHub に push する**のはこちらの作業です。push されて初めて、**利用者向けの `nix profile upgrade` が新しい内容を取りに行けます**。
+**どこで**: **clone 先のリポジトリルート**（`flake.nix` があるディレクトリ）。変更は **GitHub に push されてから**、利用者側の `nix profile upgrade` で取り込まれます。
+
+### 動作確認（push 前）
+
+clone 先のルートで、GitHub を経由せず **いまの作業ツリー**（未コミット含む）を評価できます。
+
+初回:
+
+```bash
+cd /path/to/dotfiles
+nix profile add path:$(pwd)
+```
+
+すでに **同じ `path:` で**入っているとき（例: `warning: 'dotfiles' is already added`）は **`add` ではなく `upgrade`** します。
+
+```bash
+nix profile list
+nix profile upgrade <Name>
+```
+
+`<Name>` は `nix profile list` の **`Name:`** の右（多くは `dotfiles`）。`github:` のときの tarball キャッシュは関係しません。
+
+すでに **`github:XNCOAISN/dotfiles` で**入れている場合は、`github:` と `path:` が **別項目**になることがあるため、`nix profile list` で確認し、必要なら `nix profile remove <Name>` してから入れ直すと取り違えにくいです。
 
 ### `flake.lock`
 
-**何を固定しているか**: `flake.lock` は **`inputs`（このリポジトリでは `nixpkgs` の取得先と rev）** を記録します。`flake.nix` の **`outputs` 側だけ**（入れるパッケージの列など）を変えただけなら、**ロックは変わらなくてよい**ことが多いです。
+| 内容 | 説明 |
+|------|------|
+| 固定するもの | **`inputs`**（このリポジトリでは **`nixpkgs` の rev**） |
+| 更新が主に不要な変更 | **`outputs` だけ**（パッケージ列の追加・削除など。同じ `nixpkgs` で足りる範囲） |
+| 更新した方がよい変更 | **`inputs` の追加・URL/branch 変更**、**`nixpkgs` を先頭まで進めたい**とき |
 
-**いつ更新するか（更新した方がよいとき）**
-
-- `inputs` に **新しい入力を足した**／**URL や branch を変えた**
-- **同じブランチのまま `nixpkgs` の先頭を取り直したい**（ツールの版も追従させたい）
-
-**いつ必須ではないか**
-
-- **`outputs` のパッケージ一覧だけ**変えた（いまの `nixpkgs` の範囲で足りる変更）
-
-**更新のしかた**（clone したリポジトリのルートで）
+clone 先のルートで:
 
 ```bash
 nix flake update
 ```
 
-入力を一つだけ上げる例:
+`nixpkgs` だけ:
 
 ```bash
 nix flake update nixpkgs
 ```
 
-変更した `flake.lock` は **Git にコミットして push** しておくと、他のマシンや CI でも **同じ `nixpkgs` の版**で再現しやすくなります。
+`flake.lock` を変えたら **コミットして push** し、再現性を揃えます。
