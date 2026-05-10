@@ -16,7 +16,10 @@
 
       forAllSystems = f:
         nixpkgs.lib.genAttrs systems (system:
-          f (import nixpkgs { inherit system; })
+          f (import nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+          })
         );
     in {
       packages = forAllSystems (pkgs:
@@ -29,6 +32,10 @@
             tmux
             git
             gh
+            jq
+            bat
+            eza
+            tree
           ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
             vscode
           ];
