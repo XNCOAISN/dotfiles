@@ -43,7 +43,33 @@ Intel の場合は `#te@mac-intel` に読み替えてください。
 
 ### 別ユーザー・別ホーム
 
-[home/default.nix](home/default.nix) の `home.username` / `home.homeDirectory` と、[flake.nix](flake.nix) の `homeConfigurations` / `mkSwitchApp` の属性名を自分用に変えてから使います。
+[hosts/*/default.nix](hosts/mac/default.nix) の `home.username` / `home.homeDirectory` と、[flake.nix](flake.nix) の `homeConfigurations` / `mkSwitchApp` の属性名を自分用に変えてから使います。
+
+### devcontainer（VS Code）
+
+**どこで**: devcontainer 内のターミナル（[.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) で Nix を有効化）。
+
+clone 済みのリポジトリルートで:
+
+```bash
+nix run .#switch
+```
+
+リモートから取る場合:
+
+```bash
+nix run github:XNCOAISN/dotfiles#switch
+```
+
+**x86_64-linux** では `#vscode@devcontainer`、**aarch64-linux** では `#vscode@devcontainer-arm64` が選ばれます（`nix run` は flake の `apps` 側で自動選択）。
+
+明示的に指定する場合:
+
+```bash
+home-manager switch -b hm-backup --flake .#vscode@devcontainer
+```
+
+arm64 コンテナでは `#vscode@devcontainer-arm64` に読み替えてください。
 
 ### アンインストール
 
@@ -73,6 +99,18 @@ nix build ".#homeConfigurations.te@mac.activationPackage" --no-link
 ```
 
 Intel 用の構成を試す場合は `te@mac-intel` に読み替えてください。未追跡ファイルだけがあると、flake が Git から読む設定では評価に失敗することがあるため、**評価前に `git add`** しておくと確実です。
+
+devcontainer 用（**Linux 上でのみ**ビルド可能。Mac からは platform mismatch になります）:
+
+```bash
+nix build ".#homeConfigurations.vscode@devcontainer.activationPackage" --no-link
+```
+
+arm64 用:
+
+```bash
+nix build ".#homeConfigurations.vscode@devcontainer-arm64.activationPackage" --no-link
+```
 
 ### `flake.lock`
 

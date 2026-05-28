@@ -15,10 +15,10 @@
       mkPkgs = system: import nixpkgs { inherit system; config.allowUnfree = true; };
 
       mkHome =
-        system:
+        system: module:
         home-manager.lib.homeManagerConfiguration {
           pkgs = mkPkgs system;
-          modules = [ ./home/default.nix ];
+          modules = [ module ];
         };
 
       mkSwitchApp =
@@ -40,11 +40,15 @@
 
       aarch64 = "aarch64-darwin";
       x86_64Darwin = "x86_64-darwin";
+      x86_64Linux = "x86_64-linux";
+      aarch64Linux = "aarch64-linux";
     in
     {
       homeConfigurations = {
-        "te@mac" = mkHome aarch64;
-        "te@mac-intel" = mkHome x86_64Darwin;
+        "te@mac" = mkHome aarch64 ./hosts/mac/default.nix;
+        "te@mac-intel" = mkHome x86_64Darwin ./hosts/mac/default.nix;
+        "vscode@devcontainer" = mkHome x86_64Linux ./hosts/dev/default.nix;
+        "vscode@devcontainer-arm64" = mkHome aarch64Linux ./hosts/dev/default.nix;
       };
 
       apps.${aarch64} = {
@@ -55,6 +59,16 @@
       apps.${x86_64Darwin} = {
         switch = mkSwitchApp x86_64Darwin "te@mac-intel";
         default = mkSwitchApp x86_64Darwin "te@mac-intel";
+      };
+
+      apps.${x86_64Linux} = {
+        switch = mkSwitchApp x86_64Linux "vscode@devcontainer";
+        default = mkSwitchApp x86_64Linux "vscode@devcontainer";
+      };
+
+      apps.${aarch64Linux} = {
+        switch = mkSwitchApp aarch64Linux "vscode@devcontainer-arm64";
+        default = mkSwitchApp aarch64Linux "vscode@devcontainer-arm64";
       };
     };
 }
